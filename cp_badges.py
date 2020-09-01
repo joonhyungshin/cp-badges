@@ -23,7 +23,7 @@ def codeforces_badge(handle):
         abort(404)
     user = data['result'][0]
     rank = user.get('rank')
-    rating = user.get('rank')
+    rating = user.get('rating')
     color_dict = {
         'legendary grandmaster': 'red',
         'international grandmaster': 'red',
