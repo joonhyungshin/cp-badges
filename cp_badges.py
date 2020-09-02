@@ -1,8 +1,7 @@
 import os
 from enum import Enum
-from functools import wraps
 
-from flask import Flask, abort, redirect
+from flask import Flask, abort, make_response
 from flask_caching import Cache
 
 import requests
@@ -19,12 +18,16 @@ cache = Cache(app)
 SHIELD_IO_BADGE_URL = os.getenv('SHIELD_IO_BADGE_URL', 'https://img.shields.io/badge')
 
 CODEFORCES_API_URL = os.getenv('CODEFORCES_API_URL', 'https://codeforces.com/api/user.info')
+CODEFORCES_PROFILE_URL = os.getenv('CODEFORCES_PROFILE_URL', 'https://codeforces.com/profile')
 CODEFORCES_LOGO_B64 = os.getenv('CODEFORCES_LOGO_B64')
 
 TOPCODER_API_URL = os.getenv('TOPCODER_API_URL', 'https://api.topcoder.com/v2/users')
+TOPCODER_PROFILE_URL = os.getenv('TOPCODER_PROFILE_URL', 'https://www.topcoder.com/members/{handle}/details/'
+                                                         '?track=DATA_SCIENCE&subTrack=SRM')
 TOPCODER_LOGO_B64 = os.getenv('TOPCODER_LOGO_B64')
 
 ATCODER_API_URL = os.getenv('ATCODER_API_URL', 'https://atcoder.jp/users/{handle}/history/json')
+ATCODER_PROFILE_URL = os.getenv('ATCODER_PROFILE_URL', 'https://atcoder.jp/users')
 ATCODER_LOGO_B64 = os.getenv('ATCODER_LOGO_B64')
 
 
@@ -107,6 +110,9 @@ def get_ac_rating_and_color(handle):
         rating = data[-1]['NewRating']
         color = _get_color(rating)
     else:
+        resp = requests.get('{}/{}'.format(ATCODER_PROFILE_URL, handle))
+        if not resp.ok:
+            abort(404)
         rating = 'unrated'
         color = 'black'
     return rating, color
@@ -123,36 +129,55 @@ def get_rating_and_color(oj, handle):
     return 'unknown', 'black'
 
 
-def cache_control(max_age):
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            response = f(*args, **kwargs)
-            response.headers['Cache-Control'] = 'public, max-age={}'.format(max_age)
-            return response
-        return wrapper
-    return decorator
+@cache.memoize(86400)
+def get_badge(rating, color, logo, label, link):
+    params = {}
+    if logo is not None:
+        params['logo'] = logo
+    if link is not None:
+        params['link'] = link
+    badge_url = '{}/{}-{}-{}'.format(SHIELD_IO_BADGE_URL, label, rating, color)
+    svg_resp = requests.get(badge_url, params=params)
+    return svg_resp.content
 
 
-@app.route('/codeforces/<handle>')
-@cache_control(300)
+def make_badge(oj, handle):
+    rating, color = get_rating_and_color(oj, handle)
+    if oj == OJ.CODEFORCES:
+        logo = CODEFORCES_LOGO_B64
+        label = 'Codeforces'
+        link = '{}/{}'.format(CODEFORCES_PROFILE_URL, handle)
+    elif oj == OJ.TOPCODER:
+        logo = TOPCODER_LOGO_B64
+        label = 'TopCoder'
+        link = TOPCODER_PROFILE_URL.format(handle=handle)
+    elif oj == OJ.ATCODER:
+        logo = ATCODER_LOGO_B64
+        label = 'AtCoder'
+        link = '{}/{}'.format(ATCODER_PROFILE_URL, handle)
+    else:
+        logo = None
+        label = 'Unknown'
+        link = None
+    return get_badge(rating, color, logo, label, link)
+
+
+@app.route('/codeforces/<handle>.svg')
 def codeforces_badge(handle):
-    rating, color = get_rating_and_color(OJ.CODEFORCES, handle)
-    badge_url = '{}/Codeforces-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, CODEFORCES_LOGO_B64)
-    return redirect(badge_url)
+    response = make_response(make_badge(OJ.CODEFORCES, handle))
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 
-@app.route('/topcoder/<handle>')
-@cache_control(300)
+@app.route('/topcoder/<handle>.svg')
 def topcoder_badge(handle):
-    rating, color = get_rating_and_color(OJ.TOPCODER, handle)
-    badge_url = '{}/TopCoder-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, TOPCODER_LOGO_B64)
-    return redirect(badge_url)
+    response = make_response(make_badge(OJ.TOPCODER, handle))
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 
-@app.route('/atcoder/<handle>')
-@cache_control(300)
+@app.route('/atcoder/<handle>.svg')
 def atcoder_badge(handle):
-    rating, color = get_rating_and_color(OJ.ATCODER, handle)
-    badge_url = '{}/AtCoder-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, ATCODER_LOGO_B64)
-    return redirect(badge_url)
+    response = make_response(make_badge(OJ.ATCODER, handle))
+    response.headers['Cache-Control'] = 'no-cache'
+    return response

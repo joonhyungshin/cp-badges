@@ -8,14 +8,14 @@ Shields.io badges for competitive programming
 
 ## Usage
 
-`https://run.kaist.ac.kr/badges/codeforces/[handle]`
+`https://run.kaist.ac.kr/badges/codeforces/[handle].svg`
 
-[![tourist](https://run.kaist.ac.kr/badges/codeforces/tourist)](https://codeforces.com/profile/tourist)
+[![Codeforces](https://run.kaist.ac.kr/badges/codeforces/tourist.svg)](https://codeforces.com/profile/tourist)
 
-`https://run.kaist.ac.kr/badges/topcoder/[handle]`
+`https://run.kaist.ac.kr/badges/topcoder/[handle].svg`
 
-[![tourist](https://run.kaist.ac.kr/badges/topcoder/tourist)](https://www.topcoder.com/members/tourist/details/?track=DATA_SCIENCE&subTrack=SRM)
+[![TopCoder](https://run.kaist.ac.kr/badges/topcoder/tourist.svg)](https://www.topcoder.com/members/tourist/details/?track=DATA_SCIENCE&subTrack=SRM)
 
-`https://run.kaist.ac.kr/badges/atcoder/[handle]`
+`https://run.kaist.ac.kr/badges/atcoder/[handle].svg`
 
-[![tourist](https://run.kaist.ac.kr/badges/atcoder/tourist)](https://atcoder.jp/users/tourist)
+[![AtCoder](https://run.kaist.ac.kr/badges/atcoder/tourist.svg)](https://atcoder.jp/users/tourist)
