@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from functools import wraps
 
 from flask import Flask, abort, redirect
 from flask_caching import Cache
@@ -122,7 +123,19 @@ def get_rating_and_color(oj, handle):
     return 'unknown', 'black'
 
 
+def cache_control(max_age):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            response = f(*args, **kwargs)
+            response.headers['Cache-Control'] = 'public, max-age={}'.format(max_age)
+            return response
+        return wrapper
+    return decorator
+
+
 @app.route('/codeforces/<handle>')
+@cache_control(300)
 def codeforces_badge(handle):
     rating, color = get_rating_and_color(OJ.CODEFORCES, handle)
     badge_url = '{}/Codeforces-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, CODEFORCES_LOGO_B64)
@@ -130,6 +143,7 @@ def codeforces_badge(handle):
 
 
 @app.route('/topcoder/<handle>')
+@cache_control(300)
 def topcoder_badge(handle):
     rating, color = get_rating_and_color(OJ.TOPCODER, handle)
     badge_url = '{}/TopCoder-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, TOPCODER_LOGO_B64)
@@ -137,6 +151,7 @@ def topcoder_badge(handle):
 
 
 @app.route('/atcoder/<handle>')
+@cache_control(300)
 def atcoder_badge(handle):
     rating, color = get_rating_and_color(OJ.ATCODER, handle)
     badge_url = '{}/AtCoder-{}-{}?logo={}'.format(SHIELD_IO_BADGE_URL, rating, color, ATCODER_LOGO_B64)
