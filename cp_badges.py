@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 
-from flask import Flask, abort, make_response
+from flask import Flask, abort, Response
 from flask_caching import Cache
 
 import requests
@@ -164,20 +164,20 @@ def make_badge(oj, handle):
 
 @app.route('/codeforces/<handle>.svg')
 def codeforces_badge(handle):
-    response = make_response(make_badge(OJ.CODEFORCES, handle))
+    response = Response(make_badge(OJ.CODEFORCES, handle), mimetype='image/svg+xml')
     response.headers['Cache-Control'] = 'no-cache'
     return response
 
 
 @app.route('/topcoder/<handle>.svg')
 def topcoder_badge(handle):
-    response = make_response(make_badge(OJ.TOPCODER, handle))
+    response = Response(make_badge(OJ.TOPCODER, handle), mimetype='image/svg+xml')
     response.headers['Cache-Control'] = 'no-cache'
     return response
 
 
 @app.route('/atcoder/<handle>.svg')
 def atcoder_badge(handle):
-    response = make_response(make_badge(OJ.ATCODER, handle))
+    response = Response(make_badge(OJ.ATCODER, handle), mimetype='image/svg+xml')
     response.headers['Cache-Control'] = 'no-cache'
     return response
