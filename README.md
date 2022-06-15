@@ -19,3 +19,8 @@ Shields.io badges for competitive programming
 `https://cp-badges.herokuapp.com/atcoder/[handle].svg`
 
 [![AtCoder](https://cp-badges.herokuapp.com/atcoder/tourist.svg)](https://atcoder.jp/users/tourist)
+
+## Notes
+
+- It may take up to 5 minutes to reflect your rating changes.
+
