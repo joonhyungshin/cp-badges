@@ -1,10 +1,11 @@
 import os
 from enum import Enum
 
+import requests
+from pybadges import badge
+
 from flask import Flask, abort, Response
 from flask_caching import Cache
-
-import requests
 
 
 config = {
@@ -15,20 +16,21 @@ app = Flask(__name__)
 app.config.from_mapping(config)
 cache = Cache(app)
 
-SHIELD_IO_BADGE_URL = os.getenv('SHIELD_IO_BADGE_URL', 'https://img.shields.io/badge')
-
+CODEFORCES_URL = os.getenv('CODEFORCES_URL', 'https://codeforces.com/')
 CODEFORCES_API_URL = os.getenv('CODEFORCES_API_URL', 'https://codeforces.com/api/user.info')
 CODEFORCES_PROFILE_URL = os.getenv('CODEFORCES_PROFILE_URL', 'https://codeforces.com/profile')
-CODEFORCES_LOGO_B64 = os.getenv('CODEFORCES_LOGO_B64')
+CODEFORCES_LOGO_URL = os.getenv('CODEFORCES_LOGO_URL', 'https://codeforces.org/s/0/android-icon-192x192.png')
 
+TOPCODER_URL = os.getenv('TOPCODER_URL', 'https://www.topcoder.com/community/competitive-programming/')
 TOPCODER_API_URL = os.getenv('TOPCODER_API_URL', 'https://api.topcoder.com/v2/users')
 TOPCODER_PROFILE_URL = os.getenv('TOPCODER_PROFILE_URL', 'https://www.topcoder.com/members/{handle}/details/'
                                                          '?track=DATA_SCIENCE&subTrack=SRM')
-TOPCODER_LOGO_B64 = os.getenv('TOPCODER_LOGO_B64')
+TOPCODER_LOGO_URL = os.getenv('TOPCODER_LOGO_URL', 'https://www.topcoder.com/i/favicon.ico')
 
+ATCODER_URL = os.getenv('ATCODER_URL', 'https://atcoder.jp/')
 ATCODER_API_URL = os.getenv('ATCODER_API_URL', 'https://atcoder.jp/users/{handle}/history/json')
 ATCODER_PROFILE_URL = os.getenv('ATCODER_PROFILE_URL', 'https://atcoder.jp/users')
-ATCODER_LOGO_B64 = os.getenv('ATCODER_LOGO_B64')
+ATCODER_LOGO_URL = os.getenv('ATCODER_LOGO_URL', 'https://img.atcoder.jp/assets/favicon.png')
 
 
 class OJ(Enum):
@@ -129,37 +131,32 @@ def get_rating_and_color(oj, handle):
     return 'unknown', 'black'
 
 
-@cache.memoize(86400)
-def get_badge(rating, color, logo, label, link):
-    params = {}
-    if logo is not None:
-        params['logo'] = logo
-    if link is not None:
-        params['link'] = link
-    badge_url = '{}/{}-{}-{}'.format(SHIELD_IO_BADGE_URL, label, rating, color)
-    svg_resp = requests.get(badge_url, params=params)
-    return svg_resp.content
-
-
 def make_badge(oj, handle):
     rating, color = get_rating_and_color(oj, handle)
     if oj == OJ.CODEFORCES:
-        logo = CODEFORCES_LOGO_B64
+        logo = CODEFORCES_LOGO_URL
         label = 'Codeforces'
-        link = '{}/{}'.format(CODEFORCES_PROFILE_URL, handle)
+        left_link = CODEFORCES_URL
+        right_link = '{}/{}'.format(CODEFORCES_PROFILE_URL, handle)
     elif oj == OJ.TOPCODER:
-        logo = TOPCODER_LOGO_B64
+        logo = TOPCODER_LOGO_URL
         label = 'TopCoder'
-        link = TOPCODER_PROFILE_URL.format(handle=handle)
+        left_link = TOPCODER_URL
+        right_link = TOPCODER_PROFILE_URL.format(handle=handle)
     elif oj == OJ.ATCODER:
-        logo = ATCODER_LOGO_B64
+        logo = ATCODER_LOGO_URL
         label = 'AtCoder'
-        link = '{}/{}'.format(ATCODER_PROFILE_URL, handle)
+        left_link = ATCODER_URL
+        right_link = '{}/{}'.format(ATCODER_PROFILE_URL, handle)
     else:
         logo = None
         label = 'Unknown'
-        link = None
-    return get_badge(rating, color, logo, label, link)
+        left_link = None
+        right_link = None
+    return badge(left_text=label, right_text=str(rating),
+                 left_link=left_link, right_link=right_link,
+                 right_color='#' + color,
+                 logo=logo, embed_logo=True)
 
 
 @app.route('/codeforces/<handle>.svg')
@@ -181,3 +178,4 @@ def atcoder_badge(handle):
     response = Response(make_badge(OJ.ATCODER, handle), mimetype='image/svg+xml')
     response.headers['Cache-Control'] = 'no-cache'
     return response
+
