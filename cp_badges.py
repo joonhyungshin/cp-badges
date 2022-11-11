@@ -115,6 +115,7 @@ class TopCoder(Platform):
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
     @classmethod
+    @cache.memoize(timeout=CACHE_TIMEOUT)
     def get_rating_and_color(cls, handle):
         resp = requests.get('{}/{}'.format(cls.API_URL, handle))
         if not resp.ok:
@@ -141,6 +142,7 @@ class AtCoder(Platform):
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
     @classmethod
+    @cache.memoize(timeout=CACHE_TIMEOUT)
     def get_rating_and_color(cls, handle):
         resp = requests.get(cls.API_URL.format(handle=handle))
         if not resp.ok:
