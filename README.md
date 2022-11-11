@@ -1,23 +1,24 @@
 # Competitive Programming badges
 
-Shields.io badges for competitive programming
+A simple GitHub-style badge for your competitive programming profile
 
-- Codeforces
-- TopCoder
-- AtCoder
+Currently supports:
+
+- [Codeforces](https://codeforces.com/)
+- [TopCoder](https://www.topcoder.com/community/arena)
+- [AtCoder](https://atcoder.jp/)
 
 ## Usage
 
-`https://badges.joonhyung.xyz/codeforces/[handle].svg`
+The basic endpoint is `https://badges.joonhyung.xyz/[platform]/[handle].svg`.
 
+`[![Codeforces](https://badges.joonhyung.xyz/codeforces/tourist.svg)](https://codeforces.com/profile/tourist)`
 [![Codeforces](https://badges.joonhyung.xyz/codeforces/tourist.svg)](https://codeforces.com/profile/tourist)
 
-`https://badges.joonhyung.xyz/topcoder/[handle].svg`
+`[![TopCoder](https://badges.joonhyung.xyz/topcoder/tourist.svg)](https://www.topcoder.com/members/tourist)`
+[![TopCoder](https://badges.joonhyung.xyz/topcoder/tourist.svg)](https://www.topcoder.com/members/tourist)
 
-[![TopCoder](https://badges.joonhyung.xyz/topcoder/tourist.svg)](https://www.topcoder.com/members/tourist/details/?track=DATA_SCIENCE&subTrack=SRM)
-
-`https://badges.joonhyung.xyz/atcoder/[handle].svg`
-
+`[![AtCoder](https://badges.joonhyung.xyz/atcoder/tourist.svg)](https://atcoder.jp/users/tourist)`
 [![AtCoder](https://badges.joonhyung.xyz/atcoder/tourist.svg)](https://atcoder.jp/users/tourist)
 
 ## Notes

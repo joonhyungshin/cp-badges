@@ -74,7 +74,7 @@ class Codeforces(Platform):
     PROFILE_URL = 'https://codeforces.com/profile/{handle}'
     LOGO_URL = 'https://codeforces.org/s/0/android-icon-192x192.png'
 
-    @cache.memoize(300)
+    #@cache.memoize(300)
     def get_rating_and_color(self):
         resp = requests.get(self.API_URL, params={'handles': self.handle})
         if not resp.ok:
@@ -109,7 +109,7 @@ class TopCoder(Platform):
     PROFILE_URL = 'https://www.topcoder.com/members/{handle}'
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
-    @cache.memoize(300)
+    #@cache.memoize(300)
     def get_rating_and_color(self):
         resp = requests.get('{}/{}'.format(self.API_URL, self.handle))
         if not resp.ok:
@@ -135,7 +135,7 @@ class AtCoder(Platform):
     PROFILE_URL = 'https://atcoder.jp/users'
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
-    @cache.memoize(300)
+    #@cache.memoize(300)
     def get_rating_and_color(self):
         resp = requests.get(self.API_URL.format(handle=self.handle))
         if not resp.ok:
