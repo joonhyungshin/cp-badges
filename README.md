@@ -8,15 +8,15 @@ Shields.io badges for competitive programming
 
 ## Usage
 
-`https://cp-badges.herokuapp.com/codeforces/[handle].svg`
+`https://badges.joonhyung.xyz/codeforces/[handle].svg`
 
 [![Codeforces](https://badges.joonhyung.xyz/codeforces/tourist.svg)](https://codeforces.com/profile/tourist)
 
-`https://cp-badges.herokuapp.com/topcoder/[handle].svg`
+`https://badges.joonhyung.xyz/topcoder/[handle].svg`
 
 [![TopCoder](https://badges.joonhyung.xyz/topcoder/tourist.svg)](https://www.topcoder.com/members/tourist/details/?track=DATA_SCIENCE&subTrack=SRM)
 
-`https://cp-badges.herokuapp.com/atcoder/[handle].svg`
+`https://badges.joonhyung.xyz/atcoder/[handle].svg`
 
 [![AtCoder](https://badges.joonhyung.xyz/atcoder/tourist.svg)](https://atcoder.jp/users/tourist)
 
