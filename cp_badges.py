@@ -4,7 +4,7 @@ from enum import Enum
 import requests
 from pybadges import badge
 
-from flask import Flask, abort, request, Response
+from flask import Flask, abort, redirect, request, Response
 from flask_caching import Cache
 
 
@@ -193,3 +193,7 @@ def topcoder_badge(handle):
 def atcoder_badge(handle):
     return AtCoder.make_response(handle)
 
+
+@app.route('/')
+def index():
+    return redirect('https://github.com/joonhyungshin/cp-badges')
