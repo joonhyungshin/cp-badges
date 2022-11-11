@@ -34,19 +34,28 @@ class Platform:
             'right_text': str(rating),
             'left_link': self.URL,
             'right_link': self.get_profile_url(),
-            'whole_link': None,
             'logo': self.LOGO_URL,
             'left_color': '#555',
             'right_color': color,
-            'measurer': None,
             'embed_logo': True,
-            'whole_title': None,
-            'left_title': None,
-            'right_title': None,
-            'id_suffix': '',
         }
-        for arg in badge_args:
-            badge_args[arg] = request.args.get(arg, badge_args[arg])
+        customizable = [
+            'left_text',
+            'right_text',
+            'left_link',
+            'right_link',
+            'whole_link',
+            'logo',
+            'left_color',
+            'right_color',
+            'whole_title',
+            'left_title',
+            'right_title',
+            'id_suffix',
+        ]
+        for arg in customizable:
+            if arg in request.args:
+                badge_args[arg] = request.args.get(arg)
         try:
             return badge(**badge_args)
         except ValueError:
