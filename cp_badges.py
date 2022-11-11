@@ -8,9 +8,12 @@ from flask import Flask, abort, request, Response
 from flask_caching import Cache
 
 
+CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
+
+
 config = {
     'CACHE_TYPE': 'simple',
-    'CACHE_DEFAULT_TIMEOUT': 300
+    'CACHE_DEFAULT_TIMEOUT': CACHE_TIMEOUT
 }
 app = Flask(__name__)
 app.config.from_mapping(config)
@@ -18,23 +21,23 @@ cache = Cache(app)
 
 
 class Platform:
-    def __init__(self, handle):
-        self.handle = handle
+    @classmethod
+    def get_profile_url(cls, handle):
+        return cls.PROFILE_URL.format(handle=handle)
 
-    def get_profile_url(self):
-        return self.PROFILE_URL.format(handle=self.handle)
-
-    def get_rating_and_color(self):
+    @classmethod
+    def get_rating_and_color(cls, handle):
         raise NotImplementedError
 
-    def make_badge(self):
-        rating, color = self.get_rating_and_color()
+    @classmethod
+    def make_badge(cls, handle):
+        rating, color = cls.get_rating_and_color(handle)
         badge_args = {
-            'left_text': self.LABEL,
+            'left_text': cls.LABEL,
             'right_text': str(rating),
-            'left_link': self.URL,
-            'right_link': self.get_profile_url(),
-            'logo': self.LOGO_URL,
+            'left_link': cls.URL,
+            'right_link': cls.get_profile_url(handle),
+            'logo': cls.LOGO_URL,
             'left_color': '#555',
             'right_color': color,
             'embed_logo': True,
@@ -61,9 +64,10 @@ class Platform:
         except ValueError:
             abort(400)
 
-    def make_response(self):
-        response = Response(self.make_badge(), mimetype='image/svg+xml')
-        response.headers['Cache-Control'] = 'no-cache'
+    @classmethod
+    def make_response(cls, handle):
+        response = Response(cls.make_badge(handle), mimetype='image/svg+xml')
+        response.cache_control.max_age = CACHE_TIMEOUT
         return response
 
 
@@ -74,9 +78,10 @@ class Codeforces(Platform):
     PROFILE_URL = 'https://codeforces.com/profile/{handle}'
     LOGO_URL = 'https://codeforces.org/s/0/android-icon-192x192.png'
 
-    #@cache.memoize(300)
-    def get_rating_and_color(self):
-        resp = requests.get(self.API_URL, params={'handles': self.handle})
+    @classmethod
+    @cache.memoize(timeout=CACHE_TIMEOUT)
+    def get_rating_and_color(cls, handle):
+        resp = requests.get(cls.API_URL, params={'handles': handle})
         if not resp.ok:
             abort(404)
         data = resp.json()
@@ -109,9 +114,9 @@ class TopCoder(Platform):
     PROFILE_URL = 'https://www.topcoder.com/members/{handle}'
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
-    #@cache.memoize(300)
-    def get_rating_and_color(self):
-        resp = requests.get('{}/{}'.format(self.API_URL, self.handle))
+    @classmethod
+    def get_rating_and_color(cls, handle):
+        resp = requests.get('{}/{}'.format(cls.API_URL, handle))
         if not resp.ok:
             abort(404)
         data = resp.json()
@@ -135,9 +140,9 @@ class AtCoder(Platform):
     PROFILE_URL = 'https://atcoder.jp/users'
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
-    #@cache.memoize(300)
-    def get_rating_and_color(self):
-        resp = requests.get(self.API_URL.format(handle=self.handle))
+    @classmethod
+    def get_rating_and_color(cls, handle):
+        resp = requests.get(cls.API_URL.format(handle=handle))
         if not resp.ok:
             abort(404)
         data = resp.json()
@@ -164,7 +169,7 @@ class AtCoder(Platform):
             rating = data[-1]['NewRating']
             color = _get_color(rating)
         else:
-            resp = requests.get('{}/{}'.format(self.PROFILE_URL, self.handle))
+            resp = requests.get('{}/{}'.format(cls.PROFILE_URL, handle))
             if not resp.ok:
                 abort(404)
             rating = 'unrated'
@@ -174,15 +179,15 @@ class AtCoder(Platform):
 
 @app.route('/codeforces/<handle>.svg')
 def codeforces_badge(handle):
-    return Codeforces(handle).make_response()
+    return Codeforces.make_response(handle)
 
 
 @app.route('/topcoder/<handle>.svg')
 def topcoder_badge(handle):
-    return TopCoder(handle).make_response()
+    return TopCoder.make_response(handle)
 
 
 @app.route('/atcoder/<handle>.svg')
 def atcoder_badge(handle):
-    return AtCoder(handle).make_response()
+    return AtCoder.make_response(handle)
 
