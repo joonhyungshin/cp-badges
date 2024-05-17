@@ -13,7 +13,7 @@ from pybadges import badge
 from redis import asyncio as aioredis
 
 
-session = aiohttp.ClientSession()
+session = None
 
 CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
 
@@ -21,6 +21,8 @@ CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     redis = aioredis.from_url("redis://localhost")
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    global session
+    session = aiohttp.ClientSession()
     yield
 
 app = FastAPI(lifespan=lifespan)
