@@ -1,23 +1,30 @@
+from collections.abc import AsyncIterator
 import os
+from contextlib import asynccontextmanager
 from enum import Enum
 
-import requests
+import aiohttp
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
 from pybadges import badge
+from redis import asyncio as aioredis
 
-from flask import Flask, abort, redirect, request, Response
-from flask_caching import Cache
 
+session = aiohttp.ClientSession()
 
 CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    redis = aioredis.from_url("redis://localhost")
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    yield
 
-config = {
-    'CACHE_TYPE': 'simple',
-    'CACHE_DEFAULT_TIMEOUT': CACHE_TIMEOUT
-}
-app = Flask(__name__)
-app.config.from_mapping(config)
-cache = Cache(app)
+app = FastAPI(lifespan=lifespan)
+
 
 
 class Platform:
@@ -26,12 +33,12 @@ class Platform:
         return cls.PROFILE_URL.format(handle=handle)
 
     @classmethod
-    def get_rating_and_color(cls, handle):
+    async def get_rating_and_color(cls, handle):
         raise NotImplementedError
 
     @classmethod
-    def make_badge(cls, handle):
-        rating, color = cls.get_rating_and_color(handle)
+    async def make_badge(cls, handle, extra_args):
+        rating, color = await cls.get_rating_and_color(handle)
         badge_args = {
             'left_text': cls.LABEL,
             'right_text': str(rating),
@@ -57,17 +64,20 @@ class Platform:
             'id_suffix',
         ]
         for arg in customizable:
-            if arg in request.args:
-                badge_args[arg] = request.args.get(arg)
+            if arg in extra_args:
+                badge_args[arg] = extra_args.get(arg)
         try:
             return badge(**badge_args)
         except ValueError:
-            abort(400)
+            raise HTTPException(400)
 
     @classmethod
-    def make_response(cls, handle):
-        response = Response(cls.make_badge(handle), mimetype='image/svg+xml')
-        response.cache_control.max_age = CACHE_TIMEOUT
+    async def make_response(cls, handle, extra_args):
+        response = Response(
+            await cls.make_badge(handle, extra_args),
+            media_type='image/svg+xml',
+            headers={'Cache-Control': f'max-age={CACHE_TIMEOUT}'}
+        )
         return response
 
 
@@ -79,14 +89,14 @@ class Codeforces(Platform):
     LOGO_URL = 'https://codeforces.org/s/0/android-icon-192x192.png'
 
     @classmethod
-    @cache.memoize(timeout=CACHE_TIMEOUT)
-    def get_rating_and_color(cls, handle):
-        resp = requests.get(cls.API_URL, params={'handles': handle})
+    @cache(expire=CACHE_TIMEOUT)
+    async def get_rating_and_color(cls, handle):
+        resp = await session.get(cls.API_URL, params={'handles': handle})
         if not resp.ok:
-            abort(404)
-        data = resp.json()
+            raise HTTPException(404)
+        data = await resp.json()
         if data['status'] != 'OK':
-            abort(404)
+            raise HTTPException(404)
         user = data['result'][0]
         rank = user.get('rank')
         rating = user.get('rating')
@@ -110,24 +120,23 @@ class Codeforces(Platform):
 class TopCoder(Platform):
     LABEL = 'TopCoder'
     URL = 'https://www.topcoder.com/community/competitive-programming/'
-    API_URL = 'https://api.topcoder.com/v2/users'
+    API_URL = 'https://api.topcoder.com/v5/members'
     PROFILE_URL = 'https://www.topcoder.com/members/{handle}'
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
     @classmethod
-    @cache.memoize(timeout=CACHE_TIMEOUT)
-    def get_rating_and_color(cls, handle):
-        resp = requests.get('{}/{}'.format(cls.API_URL, handle))
+    @cache(expire=CACHE_TIMEOUT)
+    async def get_rating_and_color(cls, handle):
+        resp = await session.get('{}/{}'.format(cls.API_URL, handle))
         if not resp.ok:
-            abort(404)
-        data = resp.json()
+            raise HTTPException(404)
+        data = await resp.json()
         if 'error' in data:
-            abort(404)
-        for rating_info in data.get('ratingSummary', []):
-            if rating_info.get('name') == 'Algorithm':
-                rating = rating_info['rating']
-                color = '#' + rating_info['colorStyle'][-6:]
-                break
+            raise HTTPException(404)
+        rating_info = data.get('maxRating')
+        if rating_info:
+            rating = rating_info['rating']
+            color = rating_info['ratingColor']
         else:
             rating = 'unrated'
             color = 'black'
@@ -142,12 +151,12 @@ class AtCoder(Platform):
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
     @classmethod
-    @cache.memoize(timeout=CACHE_TIMEOUT)
-    def get_rating_and_color(cls, handle):
-        resp = requests.get(cls.API_URL.format(handle=handle))
+    @cache(expire=CACHE_TIMEOUT)
+    async def get_rating_and_color(cls, handle):
+        resp = await session.get(cls.API_URL.format(handle=handle))
         if not resp.ok:
-            abort(404)
-        data = resp.json()
+            raise HTTPException(404)
+        data = await resp.json()
 
         def _get_color(_rating):
             if _rating < 400:
@@ -171,29 +180,29 @@ class AtCoder(Platform):
             rating = data[-1]['NewRating']
             color = _get_color(rating)
         else:
-            resp = requests.get('{}/{}'.format(cls.PROFILE_URL, handle))
+            resp = await session.get('{}/{}'.format(cls.PROFILE_URL, handle))
             if not resp.ok:
-                abort(404)
+                raise HTTPException(404)
             rating = 'unrated'
             color = 'black'
         return rating, color
 
 
-@app.route('/codeforces/<handle>.svg')
-def codeforces_badge(handle):
-    return Codeforces.make_response(handle)
+@app.get('/codeforces/{handle}.svg')
+async def codeforces_badge(handle, request: Request):
+    return await Codeforces.make_response(handle, request.query_params)
 
 
-@app.route('/topcoder/<handle>.svg')
-def topcoder_badge(handle):
-    return TopCoder.make_response(handle)
+@app.get('/topcoder/{handle}.svg')
+async def topcoder_badge(handle, request: Request):
+    return await TopCoder.make_response(handle, request.query_params)
 
 
-@app.route('/atcoder/<handle>.svg')
-def atcoder_badge(handle):
-    return AtCoder.make_response(handle)
+@app.get('/atcoder/{handle}.svg')
+async def atcoder_badge(handle, request: Request):
+    return await AtCoder.make_response(handle, request.query_params)
 
 
-@app.route('/')
-def index():
-    return redirect('https://github.com/joonhyungshin/cp-badges')
+@app.get('/')
+async def index():
+    return RedirectResponse('https://github.com/joonhyungshin/cp-badges')
