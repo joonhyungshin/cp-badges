@@ -11,4 +11,4 @@ COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 
 COPY . .
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD fastapi run main.py --host 0.0.0.0 --port $PORT
