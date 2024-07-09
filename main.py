@@ -6,11 +6,7 @@ from enum import Enum
 import aiohttp
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-from fastapi_cache.decorator import cache
 from pybadges import badge
-from redis import asyncio as aioredis
 import uvicorn
 
 
@@ -20,8 +16,6 @@ CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    redis = aioredis.from_url("redis://localhost")
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     global session
     session = aiohttp.ClientSession()
     yield
@@ -92,7 +86,6 @@ class Codeforces(Platform):
     LOGO_URL = 'https://codeforces.org/s/0/android-icon-192x192.png'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get(cls.API_URL, params={'handles': handle})
         if not resp.ok:
@@ -128,7 +121,6 @@ class TopCoder(Platform):
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get('{}/{}'.format(cls.API_URL, handle))
         if not resp.ok:
@@ -154,7 +146,6 @@ class AtCoder(Platform):
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get(cls.API_URL.format(handle=handle))
         if not resp.ok:
