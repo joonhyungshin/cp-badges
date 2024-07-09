@@ -11,6 +11,7 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from pybadges import badge
 from redis import asyncio as aioredis
+import uvicorn
 
 
 session = None
@@ -208,3 +209,8 @@ async def atcoder_badge(handle, request: Request):
 @app.get('/')
 async def index():
     return RedirectResponse('https://github.com/joonhyungshin/cp-badges')
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+

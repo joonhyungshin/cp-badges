@@ -1,21 +1,12 @@
-FROM python:3.9-alpine
+from python:3.12-alpine
 
-# Install Poetry
-RUN apk add curl
-RUN curl -sSL https://install.python-poetry.org | python -
-RUN /root/.poetry/bin/poetry config virtualenvs.create false
+WORKDIR /usr/src
 
-# Create project directory
-RUN mkdir /app
-WORKDIR /app/
+COPY ./requirements.txt ./requirements.txt
+RUN pip install -r requirements.txt
 
-# Install Python dependencies
-COPY pyproject.toml /app/pyproject.toml
-COPY poetry.lock /app/poetry.lock
-RUN /root/.poetry/bin/poetry install --no-root --no-dev
+COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 
-COPY cp_badges.py /app/cp_badges.py
+COPY . .
 
-EXPOSE 5000
-
-CMD gunicorn -w 4 -b :5000 cp_badges:app
+ENTRYPOINT ["./docker-entrypoint.sh"]
