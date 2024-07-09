@@ -50,5 +50,5 @@ For more details on these options, see Google [pybadges](https://github.com/goog
 
 ## Notes
 
-- The server caches some data for better performance, so it may take up to 5 minutes to reflect your rating changes.
+- Your browser may cache some data for better performance, so it may take up to 5 minutes to reflect your rating changes.
 
