@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "cp-badges"
+package-mode = false
 version = "0.1.0"
 description = "Competitive programming badges"
 authors = ["Joonhyung Shin <joonhyung.shin@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "cp_badges"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.12"
 pybadges = "3.0.0"
 fastapi = "^0.111.0"
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
