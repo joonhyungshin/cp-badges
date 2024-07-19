@@ -1,5 +1,7 @@
 # Competitive Programming badges
 
+**IMPORTANT UPDATE**: Please update your link from `badges.joonhyung.xyz` to `badges.riever.dev`.
+
 A simple GitHub-style badge for your competitive programming profile
 
 Currently supports:
@@ -10,19 +12,19 @@ Currently supports:
 
 ## Usage
 
-The basic endpoint is `https://badges.joonhyung.xyz/[platform]/[handle].svg`.
+The basic endpoint is `https://badges.riever.dev/[platform]/[handle].svg`.
 
-`[![Codeforces](https://badges.joonhyung.xyz/codeforces/jo_on.svg)](https://codeforces.com/profile/jo_on)`
+`[![Codeforces](https://badges.riever.dev/codeforces/jo_on.svg)](https://codeforces.com/profile/jo_on)`
 
-[![Codeforces](https://badges.joonhyung.xyz/codeforces/jo_on.svg)](https://codeforces.com/profile/jo_on)
+[![Codeforces](https://badges.riever.dev/codeforces/jo_on.svg)](https://codeforces.com/profile/jo_on)
 
-`[![TopCoder](https://badges.joonhyung.xyz/topcoder/homology.svg)](https://www.topcoder.com/members/homology)`
+`[![TopCoder](https://badges.riever.dev/topcoder/homology.svg)](https://www.topcoder.com/members/homology)`
 
-[![TopCoder](https://badges.joonhyung.xyz/topcoder/homology.svg)](https://www.topcoder.com/members/homology)
+[![TopCoder](https://badges.riever.dev/topcoder/homology.svg)](https://www.topcoder.com/members/homology)
 
-`[![AtCoder](https://badges.joonhyung.xyz/atcoder/topology.svg)](https://atcoder.jp/users/topology)`
+`[![AtCoder](https://badges.riever.dev/atcoder/topology.svg)](https://atcoder.jp/users/topology)`
 
-[![AtCoder](https://badges.joonhyung.xyz/atcoder/topology.svg)](https://atcoder.jp/users/topology)
+[![AtCoder](https://badges.riever.dev/atcoder/topology.svg)](https://atcoder.jp/users/topology)
 
 You can also further customize your badges using query strings. The following options are supported:
 
@@ -41,9 +43,9 @@ You can also further customize your badges using query strings. The following op
 
 An example:
 
-`[![AtCoder](https://badges.joonhyung.xyz/atcoder/tourist.svg?left_color=lightgray)](https://atcoder.jp/users/tourist)`
+`[![AtCoder](https://badges.riever.dev/atcoder/tourist.svg?left_color=lightgray)](https://atcoder.jp/users/tourist)`
 
-[![AtCoder](https://badges.joonhyung.xyz/atcoder/tourist.svg?left_color=lightgray)](https://atcoder.jp/users/tourist)
+[![AtCoder](https://badges.riever.dev/atcoder/tourist.svg?left_color=lightgray)](https://atcoder.jp/users/tourist)
 
 For more details on these options, see Google [pybadges](https://github.com/google/pybadges). Also, please note that some options are meaningless if used in GitHub profile (e.g. `left_link`, `right_link`, ...).
 
