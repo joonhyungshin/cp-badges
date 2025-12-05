@@ -124,7 +124,7 @@ class Codeforces(Platform):
 class TopCoder(Platform):
     LABEL = 'TopCoder'
     URL = 'https://www.topcoder.com/community/competitive-programming/'
-    API_URL = 'https://api.topcoder.com/v5/members'
+    API_URL = 'https://api.topcoder.com/v6/members'
     PROFILE_URL = 'https://www.topcoder.com/members/{handle}'
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
