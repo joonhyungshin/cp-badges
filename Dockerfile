@@ -25,5 +25,5 @@ COPY . .
 
 ENV PORT=8080
 
-CMD fastapi run main.py --host 0.0.0.0 --port $PORT
+CMD litestar --app main:app run --host 0.0.0.0 --port $PORT
 

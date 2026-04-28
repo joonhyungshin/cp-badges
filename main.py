@@ -4,31 +4,31 @@ from contextlib import asynccontextmanager
 from enum import Enum
 
 import aiohttp
-from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-from fastapi_cache.decorator import cache
 from pybadges import badge
-from redis import asyncio as aioredis
-import uvicorn
+
+from litestar import Litestar, get, Request, Response
+from litestar.config.response_cache import ResponseCacheConfig
+from litestar.exceptions import NotFoundException, ValidationException
+from litestar.response import Redirect
+from litestar.stores.redis import RedisStore
+
 
 
 session = None
 
-CACHE_TIMEOUT = os.getenv('CACHE_TIMEOUT', 300)
+CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', 300))
+
+redis_host = os.getenv("REDIS_HOST", "redis")
+redis_store = RedisStore.with_client(url=f"redis://{redis_host}")
+cache_config = ResponseCacheConfig(store="redis_store")
+
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    redis_host = os.getenv("REDIS_HOST", "redis")
-    redis = aioredis.from_url(f"redis://{redis_host}")
-    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+async def lifespan(_: Litestar) -> AsyncIterator[None]:
     global session
     session = aiohttp.ClientSession()
     yield
-
-app = FastAPI(lifespan=lifespan)
-
+    await session.close()
 
 
 class Platform:
@@ -73,7 +73,7 @@ class Platform:
         try:
             return badge(**badge_args)
         except ValueError:
-            raise HTTPException(400)
+            raise ValidationException()
 
     @classmethod
     async def make_response(cls, handle, extra_args):
@@ -93,14 +93,13 @@ class Codeforces(Platform):
     LOGO_URL = 'https://codeforces.org/s/0/android-icon-192x192.png'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get(cls.API_URL, params={'handles': handle})
         if not resp.ok:
-            raise HTTPException(404)
+            raise NotFoundException()
         data = await resp.json()
         if data['status'] != 'OK':
-            raise HTTPException(404)
+            raise NotFoundException()
         user = data['result'][0]
         rank = user.get('rank')
         rating = user.get('rating')
@@ -129,14 +128,13 @@ class TopCoder(Platform):
     LOGO_URL = 'https://www.topcoder.com/i/favicon.ico'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get('{}/{}'.format(cls.API_URL, handle))
         if not resp.ok:
-            raise HTTPException(404)
+            raise NotFoundException()
         data = await resp.json()
         if 'error' in data:
-            raise HTTPException(404)
+            raise NotFoundException()
         rating_info = data.get('maxRating')
         if rating_info:
             rating = rating_info['rating']
@@ -155,11 +153,10 @@ class AtCoder(Platform):
     LOGO_URL = 'https://img.atcoder.jp/assets/favicon.png'
 
     @classmethod
-    @cache(expire=CACHE_TIMEOUT)
     async def get_rating_and_color(cls, handle):
         resp = await session.get(cls.API_URL.format(handle=handle))
         if not resp.ok:
-            raise HTTPException(404)
+            raise NotFoundException()
         data = await resp.json()
 
         def _get_color(_rating):
@@ -186,28 +183,49 @@ class AtCoder(Platform):
         else:
             resp = await session.get('{}/{}'.format(cls.PROFILE_URL, handle))
             if not resp.ok:
-                raise HTTPException(404)
+                raise NotFoundException()
             rating = 'unrated'
             color = 'black'
         return rating, color
 
 
-@app.get('/codeforces/{handle}.svg')
-async def codeforces_badge(handle, request: Request):
-    return await Codeforces.make_response(handle, request.query_params)
+def extract_handle(handle_svg):
+    if not handle_svg.endswith(".svg"):
+        raise NotFoundException()
+    handle = handle_svg.removesuffix(".svg")
+    return handle
 
 
-@app.get('/topcoder/{handle}.svg')
-async def topcoder_badge(handle, request: Request):
-    return await TopCoder.make_response(handle, request.query_params)
+@get('/codeforces/{handle_svg:str}', cache=CACHE_TIMEOUT)
+async def codeforces_badge(handle_svg: str, request: Request) -> Response[str]:
+    return await Codeforces.make_response(extract_handle(handle_svg), request.query_params)
 
 
-@app.get('/atcoder/{handle}.svg')
-async def atcoder_badge(handle, request: Request):
-    return await AtCoder.make_response(handle, request.query_params)
+@get('/topcoder/{handle_svg:str}', cache=CACHE_TIMEOUT)
+async def topcoder_badge(handle_svg: str, request: Request) -> Response[str]:
+    return await TopCoder.make_response(extract_handle(handle_svg), request.query_params)
 
 
-@app.get('/')
-async def index():
-    return RedirectResponse('https://github.com/joonhyungshin/cp-badges')
+@get('/atcoder/{handle_svg:str}', cache=CACHE_TIMEOUT)
+async def atcoder_badge(handle_svg: str, request: Request) -> Response[str]:
+    return await AtCoder.make_response(extract_handle(handle_svg), request.query_params)
+
+
+@get('/')
+async def index() -> Redirect:
+    return Redirect(path='https://github.com/joonhyungshin/cp-badges')
+
+
+app = Litestar(
+    route_handlers=[
+        index,
+        codeforces_badge,
+        topcoder_badge,
+        atcoder_badge,
+    ],
+    stores={"redis_store": redis_store},
+    response_cache_config=cache_config,
+    openapi_config=None,
+    lifespan=[lifespan],
+)
 

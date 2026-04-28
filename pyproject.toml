@@ -10,11 +10,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 pybadges = "3.0.0"
-fastapi = "^0.111.0"
 setuptools = "^69.5.1"
-uvicorn = "^0.30.1"
-fastapi-cache2 = {extras = ["redis"], version = "^0.2.1"}
 aiohttp = {extras = ["speedups"], version = "^3.9.5"}
+litestar = {extras = ["redis", "standard"], version = "^2.21.1"}
 
 
 [build-system]
