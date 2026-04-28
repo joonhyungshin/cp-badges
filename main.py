@@ -19,7 +19,8 @@ session = None
 CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', 300))
 
 redis_host = os.getenv("REDIS_HOST", "redis")
-redis_store = RedisStore.with_client(url=f"redis://{redis_host}")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_store = RedisStore.with_client(url=f"redis://{redis_host}", port=redis_port)
 cache_config = ResponseCacheConfig(store="redis_store")
 
 
